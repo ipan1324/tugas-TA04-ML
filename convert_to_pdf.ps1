@@ -16,3 +16,4 @@ try {
 } finally {
     $word.Quit()
 }
+

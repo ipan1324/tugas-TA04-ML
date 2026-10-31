@@ -133,3 +133,4 @@
 2. **Kualitas Layar**: Set resolusi monitor ke 1920x1080 (1080p).
 3. **Persiapan Browser**: Buka tab web aplikasi Flask (`http://localhost:5000`) dan siapkan grafik evaluasi sebelum mulai merekam.
 4. **Deskripsi YouTube**: Sertakan tautan GitHub, tautan web app live (Render/Railway), dan ringkasan metrik di kolom deskripsi video.
+
