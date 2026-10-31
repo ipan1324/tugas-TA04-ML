@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Evaluasi Kinerja Model | AeroCast LSTM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h3 class="fw-bold mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i>Evaluasi Kinerja Model Deep Learning</h3>
+    <p class="text-muted mb-0">Hasil pengujian model LSTM pada data uji (out-of-sample) dan validasi metrik regresi.</p>
+  </div>
+  <a href="{{ url_for('forecast_page') }}" class="btn btn-sm btn-primary-custom">
+    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Simulasi Masa Depan
+  </a>
+</div>
+
+<!-- Scorecard Metrics Row -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card-custom p-3 border-start border-4 border-primary">
+      <small class="text-muted text-uppercase fw-bold">Test RMSE</small>
+      <div class="h2 fw-bold text-primary mt-1 mb-0">{{ metrics.test_rmse }}</div>
+      <small class="text-muted">Root Mean Squared Error</small>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card-custom p-3 border-start border-4 border-info">
+      <small class="text-muted text-uppercase fw-bold">Test MAE</small>
+      <div class="h2 fw-bold text-info mt-1 mb-0">{{ metrics.test_mae }}</div>
+      <small class="text-muted">Mean Absolute Error</small>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card-custom p-3 border-start border-4 border-success">
+      <small class="text-muted text-uppercase fw-bold">Test MAPE</small>
+      <div class="h2 fw-bold text-success mt-1 mb-0">{{ metrics.test_mape }}%</div>
+      <small class="text-success"><i class="fa-solid fa-check me-1"></i> Kesalahan Rata-Rata &lt; 7%</small>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card-custom p-3 border-start border-4 border-dark">
+      <small class="text-muted text-uppercase fw-bold">R² Determination</small>
+      <div class="h2 fw-bold text-dark mt-1 mb-0">{{ metrics.test_r2 }}</div>
+      <small class="text-muted">Mampu Menjelaskan 81% Variansi</small>
+    </div>
+  </div>
+</div>
+
+<!-- Evaluation Charts Row -->
+<div class="row g-4 mb-4">
+  <!-- Actual vs Predicted Interactive Chart -->
+  <div class="col-lg-8">
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <h5>
+          <i class="fa-solid fa-code-compare text-primary"></i>
+          Perbandingan Nilai Aktual vs Prediksi Model LSTM (Data Uji)
+        </h5>
+        <span class="badge bg-danger-subtle text-danger">Out-of-Sample Test Set</span>
+      </div>
+      <div class="p-3">
+        <div class="chart-container">
+          <canvas id="evaluationChart"></canvas>
+        </div>
+      </div>
+      <div class="p-3 bg-light border-top">
+        <small class="text-muted">
+          <i class="fa-solid fa-circle-check text-success me-1"></i>
+          Garis putus-putus merah (Prediksi LSTM) mereplikasi fluktuasi tajam dan puncak musiman dari data riil (garis gelap).
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Training Loss Curve -->
+  <div class="col-lg-4">
+    <div class="card-custom h-100">
+      <div class="card-header-custom">
+        <h5><i class="fa-solid fa-arrow-trend-down text-primary"></i> Konvergensi Loss Pelatihan</h5>
+      </div>
+      <div class="p-3 text-center">
+        <img src="{{ url_for('static', filename='images/training_loss.png') }}" class="img-fluid rounded border" alt="Kurva Loss">
+      </div>
+      <div class="p-3 bg-light border-top">
+        <small class="text-muted">
+          Model berhenti pada epoch ke-{{ metrics.epochs_trained }} melalui mekanisme <em>Early Stopping</em> dan <em>ReduceLROnPlateau</em> untuk menjaga stabilitas validasi tanpa overfitting.
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Series & Residuals Row -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <h5><i class="fa-solid fa-timeline text-primary"></i> Evaluasi Seluruh Garis Waktu (Train Fit vs Test Forecast)</h5>
+      </div>
+      <div class="p-3 text-center">
+        <img src="{{ url_for('static', filename='images/full_series_forecast.png') }}" class="img-fluid rounded border" alt="Full Series Forecast">
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <h5><i class="fa-solid fa-chart-simple text-primary"></i> Analisis Residual Kesalahan</h5>
+      </div>
+      <div class="p-3 text-center">
+        <img src="{{ url_for('static', filename='images/residuals_distribution.png') }}" class="img-fluid rounded border" alt="Distribusi Residual">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Test Results Data Table -->
+<div class="card-custom mb-4">
+  <div class="card-header-custom">
+    <h5><i class="fa-solid fa-table text-primary"></i> Rincian Nilai Aktual vs Prediksi pada Data Uji</h5>
+    <span class="badge bg-light text-dark border">{{ test_data|length }} Sampel Evaluasi</span>
+  </div>
+  <div class="table-responsive p-0" style="max-height: 400px; overflow-y: auto;">
+    <table class="table table-custom table-hover table-striped">
+      <thead>
+        <tr>
+          <th>Periode (Bulan)</th>
+          <th>Nilai Aktual (Ribuan)</th>
+          <th>Prediksi LSTM (Ribuan)</th>
+          <th>Selisih (Error)</th>
+          <th>Persentase Error (% MAPE)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in test_data %}
+        <tr>
+          <td class="fw-bold">{{ row.Date }}</td>
+          <td>{{ row.Actual|round(1) }}k</td>
+          <td><span class="badge bg-primary fs-6 px-3">{{ row.Predicted|round(1) }}k</span></td>
+          <td class="{% if row.Error > 0 %}text-danger{% else %}text-primary{% endif %}">
+            {{ row.Error|round(2) }}
+          </td>
+          <td>
+            <span class="badge {% if row.Abs_Error_Pct < 5 %}bg-success-subtle text-success{% elif row.Abs_Error_Pct < 10 %}bg-info-subtle text-info{% else %}bg-warning-subtle text-warning{% endif %}">
+              {{ row.Abs_Error_Pct|round(2) }}%
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AeroCast LSTM | Peramalan Penumpang Maskapai{% endblock %}</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
+  
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+    <div class="container-fluid px-lg-4">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <div class="brand-icon">
+          <i class="fa-solid fa-plane-departure"></i>
+        </div>
+        <span>AeroCast <span class="fw-light text-info">LSTM</span></span>
+      </a>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navMain">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-1">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+              <i class="fa-solid fa-chart-line"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'explore' %}active{% endif %}" href="{{ url_for('explore') }}">
+              <i class="fa-solid fa-magnifying-glass-chart"></i> Eksplorasi Data
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'evaluation' %}active{% endif %}" href="{{ url_for('evaluation') }}">
+              <i class="fa-solid fa-microchip"></i> Evaluasi Model
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'forecast_page' %}active{% endif %}" href="{{ url_for('forecast_page') }}">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Simulasi Peramalan
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}">
+              <i class="fa-solid fa-book-open"></i> Metodologi & Teori
+            </a>
+          </li>
+        </ul>
+        <div class="ms-lg-3 mt-3 mt-lg-0">
+          <a href="{{ url_for('forecast_page') }}" class="btn btn-sm btn-primary-custom d-flex align-items-center gap-2">
+            <i class="fa-solid fa-play"></i> Mulai Prediksi
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="flex-grow-1 py-4">
+    <div class="container-fluid px-lg-4">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container-fluid px-lg-4">
+      <div class="row align-items-center">
+        <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+          <p class="mb-0">
+            <strong>AeroCast LSTM</strong> &copy; 2026. Tugas TA04 - Machine Learning (Time Series Forecasting).
+          </p>
+          <small class="text-secondary">Dibangun menggunakan TensorFlow, Keras, Flask, Scikit-Learn, & Chart.js</small>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <div class="d-inline-flex gap-3">
+            <span class="badge bg-dark border text-light"><i class="fa-brands fa-python me-1"></i> Python 3.11</span>
+            <span class="badge bg-dark border text-light"><i class="fa-solid fa-brain me-1"></i> Keras LSTM</span>
+            <span class="badge bg-dark border text-light"><i class="fa-solid fa-server me-1"></i> Flask Web API</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5.3 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

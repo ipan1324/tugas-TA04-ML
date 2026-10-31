@@ -1,0 +1,14 @@
+{
+    "train_rmse": 28.648,
+    "train_mae": 23.346,
+    "train_mape": 9.855,
+    "train_r2": 0.9,
+    "test_rmse": 34.835,
+    "test_mae": 28.141,
+    "test_mape": 6.592,
+    "test_r2": 0.809,
+    "epochs_trained": 103,
+    "look_back": 12,
+    "train_samples": 105,
+    "test_samples": 27
+}

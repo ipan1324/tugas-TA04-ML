@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Metodologi & Teori | AeroCast LSTM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="card-custom p-4 p-md-5 mb-4">
+      <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 mb-3 align-self-start">
+        Dokumentasi Proyek & Latar Belakang Teoretis
+      </span>
+      <h2 class="fw-bold mb-3">Arsitektur Long Short-Term Memory (LSTM) untuk Pemodelan Data Sekuensial</h2>
+      <p class="lead text-muted mb-4">
+        Tinjauan komprehensif mengenai perumusan matematis, pra-pemrosesan data time series, serta alur kerja rekayasa model deep learning pada proyek AeroCast LSTM.
+      </p>
+
+      <hr class="my-4">
+
+      <!-- Section 1 -->
+      <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-1 text-primary me-2"></i>Perumusan Masalah & Justifikasi Pemilihan Kasus</h4>
+      <p class="text-secondary">
+        Industri transportasi penerbangan internasional beroperasi dalam dinamika pasar yang sangat dipengaruhi oleh tren jangka panjang (pertumbuhan ekonomi dan ekspansi armada) serta fluktuasi musiman yang berulang setiap tahun (liburan sekolah dan musim panas). Ketidaktepatan peramalan jumlah penumpang dapat menimbulkan kerugian operasional masif, mulai dari kelebihan kapasitas kursi (<em>excess capacity</em>) hingga kekurangan armada dan awak kabin di rute padat.
+      </p>
+      <p class="text-secondary">
+        Dataset <em>AirPassengers</em> merekam jumlah penumpang bulanan dari Januari 1949 hingga Desember 1960 (144 observasi), yang menjadi tolak ukur (<em>benchmark</em>) ideal dalam mengevaluasi kemampuan algoritma deep learning dalam memodelkan pola non-linear dan musiman majemuk secara simultan.
+      </p>
+
+      <!-- Section 2 -->
+      <h4 class="fw-bold text-dark mb-3 mt-4"><i class="fa-solid fa-2 text-primary me-2"></i>Mekanisme Arsitektur LSTM</h4>
+      <p class="text-secondary">
+        <em>Recurrent Neural Network</em> (RNN) konvensional mengalami masalah <em>vanishing/exploding gradient</em> saat memproses sekuens data yang panjang. LSTM mengatasi keterbatasan ini melalui struktur sel khusus yang dikendalikan oleh tiga gerbang (*gates*):
+      </p>
+
+      <div class="row g-3 my-2">
+        <div class="col-md-4">
+          <div class="p-3 bg-light rounded-3 border h-100">
+            <h6 class="fw-bold text-primary mb-1">Forget Gate ($f_t$)</h6>
+            <p class="small text-muted mb-0">
+              Menentukan informasi masa lalu mana dari <em>cell state</em> sebelumnya ($C_{t-1}$) yang harus dibuang atau dipertahankan:
+              <br><code>f_t = σ(W_f · [h_{t-1}, x_t] + b_f)</code>
+            </p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 bg-light rounded-3 border h-100">
+            <h6 class="fw-bold text-primary mb-1">Input Gate ($i_t$) & Candidate ($\tilde{C}_t$)</h6>
+            <p class="small text-muted mb-0">
+              Menentukan informasi baru mana yang akan disimpan ke dalam <em>cell state</em>:
+              <br><code>i_t = σ(W_i · [h_{t-1}, x_t] + b_i)</code>
+              <br><code>C̃_t = tanh(W_c · [h_{t-1}, x_t] + b_c)</code>
+            </p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 bg-light rounded-3 border h-100">
+            <h6 class="fw-bold text-primary mb-1">Output Gate ($o_t$) & Hidden State ($h_t$)</h6>
+            <p class="small text-muted mb-0">
+              Menentukan nilai keluaran tersembunyi yang akan diteruskan ke langkah waktu berikutnya:
+              <br><code>o_t = σ(W_o · [h_{t-1}, x_t] + b_o)</code>
+              <br><code>h_t = o_t * tanh(C_t)</code>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <h4 class="fw-bold text-dark mb-3 mt-4"><i class="fa-solid fa-3 text-primary me-2"></i>Alur Pra-Pemrosesan: Scaling & Windowing</h4>
+      <div class="p-3 bg-light rounded-3 border mb-3">
+        <ol class="mb-0 text-secondary ps-3">
+          <li class="mb-2">
+            <strong>Normalisasi Skala (MinMaxScaler):</strong>
+            Mengubah rentang fitur target ke interval $[0, 1]$ menggunakan persamaan:
+            <code>x_norm = (x - x_min) / (x_max - x_min)</code>. Hal ini penting untuk menstabilkan fungsi aktivasi non-linier <code>tanh</code> dan mencegah dominasi nilai ekstrem pada gradien bobot.
+          </li>
+          <li class="mb-2">
+            <strong>Transformasi Sekuens (Sliding Window):</strong>
+            Dengan ukuran jendela <em>look-back</em> $T = 12$ bulan, deret $x_1, x_2, \dots, x_{144}$ dipetakan menjadi pasangan input-output:
+            <code>X_i = [x_i, x_{i+1}, \dots, x_{i+11}]</code> dan target <code>y_i = x_{i+12}</code>.
+          </li>
+          <li>
+            <strong>Reshaping Tensor 3D:</strong>
+            Keras LSTM memerlukan format input 3 dimensi berukuran <code>(samples, timesteps, features)</code> = <code>(105, 12, 1)</code> untuk data latih dan <code>(27, 12, 1)</code> untuk data uji.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 4 -->
+      <h4 class="fw-bold text-dark mb-3 mt-4"><i class="fa-solid fa-4 text-primary me-2"></i>Metrik Evaluasi Kinerja</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-custom">
+          <thead>
+            <tr>
+              <th>Metrik</th>
+              <th>Formula Matematis</th>
+              <th>Hasil Data Uji (Test Set)</th>
+              <th>Interpretasi Praktis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw-bold">RMSE</td>
+              <td>$$\sqrt{\frac{1}{n} \sum (y_i - \hat{y}_i)^2}$$</td>
+              <td><span class="badge bg-primary fs-6">{{ metrics.test_rmse }}</span></td>
+              <td>Memberikan penalti lebih tinggi terhadap kesalahan deviasi besar (satuan: ribuan penumpang).</td>
+            </tr>
+            <tr>
+              <td class="fw-bold">MAE</td>
+              <td>$$\frac{1}{n} \sum |y_i - \hat{y}_i|$$</td>
+              <td><span class="badge bg-info fs-6">{{ metrics.test_mae }}</span></td>
+              <td>Rata-rata kesalahan absolut secara riil terhadap jumlah penumpang aktual.</td>
+            </tr>
+            <tr>
+              <td class="fw-bold">MAPE</td>
+              <td>$$\frac{1}{n} \sum |\frac{y_i - \hat{y}_i}{y_i}| \times 100\%$$</td>
+              <td><span class="badge bg-success fs-6">{{ metrics.test_mape }}%</span></td>
+              <td>Rasio deviasi persentase kesalahan; di bawah 10% menandakan akurasi sangat presisi.</td>
+            </tr>
+            <tr>
+              <td class="fw-bold">$R^2$ Score</td>
+              <td>$$1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}$$</td>
+              <td><span class="badge bg-dark fs-6">{{ metrics.test_r2 }}</span></td>
+              <td>Model mampu menjelaskan 80.9% variansi pola data uji yang belum pernah dilihat sebelumnya.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section 5 -->
+      <h4 class="fw-bold text-dark mb-3 mt-4"><i class="fa-solid fa-5 text-primary me-2"></i>Petunjuk Penggunaan API Endpoint</h4>
+      <p class="text-secondary">
+        AeroCast menyediakan endpoint REST API untuk integrasi sistem eksternal:
+      </p>
+      <div class="bg-dark text-light p-3 rounded-3 font-monospace small">
+        <span class="text-info">POST</span> /api/forecast<br>
+        <span class="text-muted">Content-Type: application/json</span><br><br>
+        {<br>
+        &nbsp;&nbsp;"horizon": 12,<br>
+        &nbsp;&nbsp;"scenario": "standard",<br>
+        &nbsp;&nbsp;"sequence": [417, 391, 419, 461, 472, 535, 622, 606, 508, 461, 390, 432]<br>
+        }
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

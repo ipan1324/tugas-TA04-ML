@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Eksplorasi Data (EDA) | AeroCast LSTM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h3 class="fw-bold mb-1"><i class="fa-solid fa-magnifying-glass-chart text-primary me-2"></i>Eksplorasi & Pra-Pemrosesan Data</h3>
+    <p class="text-muted mb-0">Analisis karakteristik statistik, pola musiman, dan dekomposisi deret waktu penumpang pesawat.</p>
+  </div>
+  <a href="{{ url_for('forecast_page') }}" class="btn btn-sm btn-outline-primary">
+    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Langsung ke Peramalan
+  </a>
+</div>
+
+<!-- Statistical Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card-custom p-3 text-center">
+      <small class="text-muted text-uppercase fw-semibold">Rata-Rata (Mean)</small>
+      <div class="h3 fw-bold text-dark mt-1 mb-0">{{ stats.mean }}k</div>
+      <small class="text-secondary">Standar Deviasi: ±{{ stats.std }}k</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card-custom p-3 text-center">
+      <small class="text-muted text-uppercase fw-semibold">Median (Q2)</small>
+      <div class="h3 fw-bold text-dark mt-1 mb-0">{{ stats.median }}k</div>
+      <small class="text-secondary">Nilai Tengah Distribusi</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card-custom p-3 text-center">
+      <small class="text-muted text-uppercase fw-semibold">Rentang Kuartil (IQR)</small>
+      <div class="h3 fw-bold text-dark mt-1 mb-0">{{ stats.q25 }}k - {{ stats.q75 }}k</div>
+      <small class="text-secondary">25% s/d 75% Data</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card-custom p-3 text-center">
+      <small class="text-muted text-uppercase fw-semibold">Ekstrem (Min / Max)</small>
+      <div class="h3 fw-bold text-dark mt-1 mb-0">{{ stats.min }}k / {{ stats.max }}k</div>
+      <small class="text-secondary">Variasi Data 12 Tahun</small>
+    </div>
+  </div>
+</div>
+
+<!-- EDA Visualizations Grid -->
+<div class="row g-4 mb-4">
+  <!-- Plot 1: Decomposition -->
+  <div class="col-lg-12">
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <h5>
+          <i class="fa-solid fa-chart-line text-primary"></i>
+          Dekomposisi Deret Waktu (Observed, Trend, Seasonal, Residual)
+        </h5>
+        <span class="badge bg-primary-subtle text-primary">Time Series Decomposition</span>
+      </div>
+      <div class="p-3 text-center">
+        <img src="{{ url_for('static', filename='images/eda_decomposition.png') }}" class="img-fluid rounded-3 shadow-sm border" alt="Dekomposisi Time Series">
+      </div>
+      <div class="p-3 bg-light border-top">
+        <h6 class="fw-bold mb-1"><i class="fa-solid fa-lightbulb text-warning me-1"></i> Interpretasi Ilmiah:</h6>
+        <p class="small text-muted mb-0">
+          Dekomposisi menunjukkan pertumbuhan jangka panjang yang konsisten (komponen <strong>Trend</strong>), pola periodik tahunan yang sangat kuat berulang setiap 12 bulan (komponen <strong>Seasonal</strong> dengan puncak di bulan Juli-Agustus), dan fluktuasi acak (komponen <strong>Residual</strong>) yang berpusat di sekitar angka nol.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plot 2: Seasonality Boxplot -->
+  <div class="col-lg-6">
+    <div class="card-custom h-100">
+      <div class="card-header-custom">
+        <h5>
+          <i class="fa-solid fa-chart-column text-primary"></i>
+          Distribusi Musiman Berdasarkan Bulan (Seasonality)
+        </h5>
+      </div>
+      <div class="p-3 text-center">
+        <img src="{{ url_for('static', filename='images/eda_monthly_boxplot.png') }}" class="img-fluid rounded-3 shadow-sm border" alt="Boxplot Musiman">
+      </div>
+      <div class="p-3 bg-light border-top">
+        <p class="small text-muted mb-0">
+          Lonjakan penumpang tertinggi terjadi pada <strong>Juli dan Agustus</strong> (musim liburan musim panas internasional), sedangkan penurunan signifikan terjadi pada <strong>November</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table: Recent Records -->
+  <div class="col-lg-6">
+    <div class="card-custom h-100 d-flex flex-column">
+      <div class="card-header-custom">
+        <h5>
+          <i class="fa-solid fa-table-list text-primary"></i>
+          Sampel Data Historis (24 Bulan Terakhir)
+        </h5>
+        <span class="badge bg-light text-dark border">1959 - 1960</span>
+      </div>
+      <div class="table-responsive flex-grow-1 p-0" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-custom table-hover">
+          <thead>
+            <tr>
+              <th>Bulan (Period)</th>
+              <th>Jumlah Penumpang (Ribuan)</th>
+              <th>Status Tren</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in records %}
+            <tr>
+              <td class="fw-semibold">{{ row.Month_Str }}</td>
+              <td><span class="badge bg-secondary-subtle text-secondary fs-6 px-3">{{ row.Passengers }}k</span></td>
+              <td>
+                {% if row.Passengers > 450 %}
+                  <span class="badge bg-success-subtle text-success"><i class="fa-solid fa-arrow-up"></i> Tinggi</span>
+                {% elif row.Passengers > 350 %}
+                  <span class="badge bg-primary-subtle text-primary"><i class="fa-solid fa-minus"></i> Sedang</span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning"><i class="fa-solid fa-arrow-down"></i> Rendah</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

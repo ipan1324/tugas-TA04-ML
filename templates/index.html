@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | AeroCast LSTM Forecasting{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="hero-banner">
+  <div class="row align-items-center position-relative" style="z-index: 2;">
+    <div class="col-lg-8">
+      <span class="badge bg-info text-dark fw-bold px-3 py-2 mb-3">
+        <i class="fa-solid fa-plane-up me-1"></i> Sistem Peramalan Deret Waktu Deep Learning
+      </span>
+      <h1 class="display-5 fw-bold mb-3">
+        Peramalan Jumlah Penumpang Maskapai Internasional Berbasis LSTM
+      </h1>
+      <p class="lead text-light opacity-90 mb-4">
+        Aplikasi web cerdas untuk menganalisis tren historis dan memproyeksikan permintaan penumpang udara di masa depan menggunakan arsitektur <em>Long Short-Term Memory</em> (LSTM) dengan akurasi tinggi.
+      </p>
+      <div class="d-flex flex-wrap gap-3">
+        <a href="{{ url_for('forecast_page') }}" class="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 shadow-sm">
+          <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Buka Simulator Peramalan
+        </a>
+        <a href="{{ url_for('evaluation') }}" class="btn btn-outline-light px-4 py-2 rounded-3">
+          <i class="fa-solid fa-square-poll-vertical me-1"></i> Lihat Performa Model
+        </a>
+      </div>
+    </div>
+    <div class="col-lg-4 text-center mt-4 mt-lg-0">
+      <div class="card-custom p-4 bg-white text-dark shadow-lg">
+        <h6 class="text-uppercase text-muted fw-bold mb-2">Skor Akurasi Model ($R^2$)</h6>
+        <div class="display-4 fw-bold text-primary mb-1">{{ metrics.test_r2 * 100 }}%</div>
+        <p class="small text-success mb-3 fw-semibold">
+          <i class="fa-solid fa-circle-check me-1"></i> Sangat Akurat pada Data Uji (Test Set)
+        </p>
+        <div class="d-flex justify-content-around border-top pt-3">
+          <div>
+            <div class="small text-muted">Test RMSE</div>
+            <div class="h6 fw-bold mb-0">{{ metrics.test_rmse }}</div>
+          </div>
+          <div>
+            <div class="small text-muted">Test MAPE</div>
+            <div class="h6 fw-bold mb-0">{{ metrics.test_mape }}%</div>
+          </div>
+          <div>
+            <div class="small text-muted">Lag Window</div>
+            <div class="h6 fw-bold mb-0">12 Bulan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card kpi-blue d-flex align-items-center justify-content-between">
+      <div>
+        <div class="kpi-label">Total Data Observasi</div>
+        <div class="kpi-value">{{ total_records }} Bulan</div>
+        <small class="text-muted"><i class="fa-regular fa-calendar me-1"></i> 1949 s/d 1960 (12 Tahun)</small>
+      </div>
+      <div class="kpi-icon kpi-icon-blue">
+        <i class="fa-solid fa-database"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card kpi-sky d-flex align-items-center justify-content-between">
+      <div>
+        <div class="kpi-label">Penumpang Terakhir</div>
+        <div class="kpi-value">{{ latest_passengers }}k</div>
+        <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> Periode {{ latest_month }}</small>
+      </div>
+      <div class="kpi-icon kpi-icon-sky">
+        <i class="fa-solid fa-users"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card kpi-green d-flex align-items-center justify-content-between">
+      <div>
+        <div class="kpi-label">Puncak Historis Max</div>
+        <div class="kpi-value">{{ max_passengers }}k</div>
+        <small class="text-success"><i class="fa-solid fa-arrow-trend-up me-1"></i> Musim Panas (Jul 1960)</small>
+      </div>
+      <div class="kpi-icon kpi-icon-green">
+        <i class="fa-solid fa-chart-line-up"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card kpi-purple d-flex align-items-center justify-content-between">
+      <div>
+        <div class="kpi-label">Titik Terendah Min</div>
+        <div class="kpi-value">{{ min_passengers }}k</div>
+        <small class="text-muted"><i class="fa-regular fa-calendar-check me-1"></i> Periode Nov 1949</small>
+      </div>
+      <div class="kpi-icon kpi-icon-purple">
+        <i class="fa-solid fa-chart-line-down"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts & Highlights Row -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <h5>
+          <i class="fa-solid fa-chart-area text-primary"></i>
+          Tren Pertumbuhan Penumpang Maskapai (1949 - 1960)
+        </h5>
+        <span class="badge bg-light text-secondary border">Dataset Lengkap Bulanan</span>
+      </div>
+      <div class="p-3">
+        <div class="chart-container">
+          <canvas id="dashboardChart"></canvas>
+        </div>
+      </div>
+      <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <small class="text-muted">
+          <i class="fa-solid fa-circle-info text-info me-1"></i> Menampilkan tren non-linier naik dengan pola musiman 12 bulan (siklus tahunan).
+        </small>
+        <a href="{{ url_for('explore') }}" class="btn btn-sm btn-outline-primary">
+          Eksplorasi Detail <i class="fa-solid fa-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Architecture Summary Card -->
+    <div class="card-custom mb-4">
+      <div class="card-header-custom">
+        <h5><i class="fa-solid fa-layer-group text-primary"></i> Spesifikasi Arsitektur</h5>
+      </div>
+      <div class="p-3">
+        <ul class="list-group list-group-flush small">
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Model Framework</span>
+            <span class="badge bg-primary">TensorFlow / Keras</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Windowing Timestep</span>
+            <span class="fw-bold">12 Bulan (1 Tahun)</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Layer 1 (LSTM)</span>
+            <span class="fw-bold">64 Units (tanh)</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Layer 2 (Dropout)</span>
+            <span class="fw-bold">Rate 0.20</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Layer 3 (LSTM)</span>
+            <span class="fw-bold">32 Units (tanh)</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Layer 4 (Dense)</span>
+            <span class="fw-bold">16 Units (relu)</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>Loss / Optimizer</span>
+            <span class="badge bg-secondary">MSE / Adam</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Quick Action Card -->
+    <div class="card-custom p-4 bg-gradient text-dark border-primary" style="background: #eff6ff;">
+      <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-bolt me-1"></i> Coba Peramalan Langsung</h6>
+      <p class="small text-muted mb-3">
+        Ingin mengetahui proyeksi jumlah penumpang untuk 12 hingga 24 bulan ke depan?
+      </p>
+      <a href="{{ url_for('forecast_page') }}" class="btn btn-primary-custom w-100 text-center">
+        Buka Simulator <i class="fa-solid fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

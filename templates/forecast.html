@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulasi Peramalan Interaktif | AeroCast LSTM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h3 class="fw-bold mb-1"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Simulasi Peramalan Masa Depan</h3>
+    <p class="text-muted mb-0">Lakukan proyeksi jumlah penumpang multi-step ke masa depan secara interaktif dengan model LSTM.</p>
+  </div>
+  <span class="badge bg-primary-subtle text-primary border border-primary px-3 py-2">
+    <i class="fa-solid fa-check-double me-1"></i> Model Siap Pakai (Active)
+  </span>
+</div>
+
+<div class="row g-4">
+  <!-- Controls Form -->
+  <div class="col-lg-4">
+    <div class="card-custom p-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Parameter Peramalan</h5>
+      
+      <!-- Horizon -->
+      <div class="mb-3">
+        <label for="forecastHorizon" class="form-label fw-semibold small text-muted text-uppercase">
+          Jangka Waktu Peramalan (Horizon)
+        </label>
+        <select class="form-select" id="forecastHorizon">
+          <option value="6">6 Bulan ke Depan (Jangka Pendek)</option>
+          <option value="12" selected>12 Bulan ke Depan (1 Siklus Tahunan)</option>
+          <option value="24">24 Bulan ke Depan (2 Siklus Tahunan)</option>
+          <option value="36">36 Bulan ke Depan (Jangka Panjang)</option>
+        </select>
+        <div class="form-text">Model akan melakukan <em>autoregressive rolling forecast</em> langkah demi langkah.</div>
+      </div>
+
+      <!-- Scenario -->
+      <div class="mb-3">
+        <label for="forecastScenario" class="form-label fw-semibold small text-muted text-uppercase">
+          Skenario Pertumbuhan
+        </label>
+        <select class="form-select" id="forecastScenario">
+          <option value="standard" selected>Skenario Standar (Sesuai Tren Historis)</option>
+          <option value="optimistic">Skenario Optimis (+8% Pertumbuhan Pasar)</option>
+          <option value="pessimistic">Skenario Konservatif (-8% Penurunan Permintaan)</option>
+        </select>
+      </div>
+
+      <!-- Custom Sequence Toggle / Input -->
+      <div class="mb-4">
+        <label for="customSequence" class="form-label fw-semibold small text-muted text-uppercase">
+          Data Input 12 Bulan Terakhir (Bisa Diedit)
+        </label>
+        <textarea class="form-control font-monospace small" id="customSequence" rows="3" placeholder="Masukkan 12 angka dipisah koma">{{ last_12_vals_str }}</textarea>
+        <div class="form-text">Default adalah 12 bulan terakhir dari dataset asli (1960). Anda dapat mengubah angka untuk menguji skenario kustom.</div>
+      </div>
+
+      <!-- Run Button -->
+      <button id="btnRunForecast" class="btn btn-primary-custom w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Jalankan Simulasi Peramalan
+      </button>
+    </div>
+
+    <!-- Info card -->
+    <div class="card-custom p-3 bg-light border">
+      <h6 class="fw-bold mb-2 small text-uppercase text-muted"><i class="fa-solid fa-circle-question text-info me-1"></i> Bagaimana Cara Kerjanya?</h6>
+      <p class="small text-muted mb-0">
+        Jendela 12 bulan terakhir dimasukkan ke model LSTM untuk menghasilkan prediksi bulan $t+1$. Nilai prediksi tersebut kemudian ditambahkan ke dalam sekuens input (menggeser jendela), lalu dimasukkan kembali untuk memprediksi bulan $t+2$, dan seterusnya hingga memenuhi rentang horizon yang ditentukan.
+      </p>
+    </div>
+  </div>
+
+  <!-- Interactive Chart & Results Table -->
+  <div class="col-lg-8">
+    <!-- Forecast Chart -->
+    <div class="card-custom mb-4">
+      <div class="card-header-custom">
+        <h5>
+          <i class="fa-solid fa-chart-line text-primary"></i>
+          Visualisasi Proyeksi Peramalan & Rentang Toleransi (Confidence Interval)
+        </h5>
+        <span class="badge bg-success-subtle text-success">Interaktif Chart.js</span>
+      </div>
+      <div class="p-3">
+        <div class="chart-container" style="height: 400px;">
+          <canvas id="forecastChart"></canvas>
+        </div>
+      </div>
+      <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <small class="text-muted">
+          <i class="fa-solid fa-shield-halved text-success me-1"></i> Area bayangan hijau mewakili batas toleransi kesalahan $\pm 1$ RMSE.
+        </small>
+      </div>
+    </div>
+
+    <!-- Forecast Results Table -->
+    <div class="card-custom">
+      <div class="card-header-custom">
+        <h5><i class="fa-solid fa-list-check text-primary"></i> Tabel Hasil Proyeksi Masa Depan</h5>
+      </div>
+      <div class="table-responsive p-0" style="max-height: 350px; overflow-y: auto;">
+        <table class="table table-custom table-hover">
+          <thead>
+            <tr>
+              <th>Langkah</th>
+              <th>Periode Bulan</th>
+              <th>Prediksi Penumpang (Ribuan)</th>
+              <th>Batas Bawah</th>
+              <th>Batas Atas</th>
+              <th>Tingkat Keyakinan</th>
+            </tr>
+          </thead>
+          <tbody id="forecastTableBody">
+            <!-- Populated dynamically via JS -->
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="fa-solid fa-spinner fa-spin me-2"></i> Memuat data peramalan...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
