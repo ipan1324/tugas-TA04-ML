@@ -63,9 +63,9 @@ df['Month'] = pd.to_datetime(df['Month'])
 df.set_index('Month', inplace=True)
 
 print("Dimensi Data:", df.shape)
-print("\nInformasi Tipe Data & Missing Values:")
+print()\nprint("Informasi Tipe Data & Missing Values:")
 print(df.info())
-print("\nStatistik Deskriptif:")
+print()\nprint("Statistik Deskriptif:")
 display(df.describe())
 display(df.head(10))"""))
 
